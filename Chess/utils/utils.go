@@ -97,7 +97,7 @@ func signMessage(privateKey *rsa.PrivateKey, message []byte) []byte {
 	hash := sha256.Sum256(message)
 	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hash[:])
 	if err != nil {
-		log.Fatal("Erreur lors de la signature.", err)
+		log.Fatal("Error during signing.", err)
 	}
 	return signature
 }
@@ -116,12 +116,12 @@ func LoadPrivateKey(filename string) *rsa.PrivateKey {
 
 	block, _ := pem.Decode(data)
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		log.Fatal("Clé privée invalide.")
+		log.Fatal("Invalid private key.")
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		log.Fatal("Erreur de chargement de la clé privée.", err)
+		log.Fatal("Error during the loading of the private key.", err)
 	}
 	return key
 }
@@ -172,22 +172,22 @@ func GetTeamString(team int) string {
 
 	switch team {
 	case 1:
-		return "Noire"
+		return "Black"
 	case 2:
-		return "Blanc"
+		return "White"
 	}
 
-	return "Aucune"
+	return "None"
 }
 
 func GetVictoryMessage(outcome int) string {
 	switch outcome {
 	case 1:
-		return "Blanc a Gagné"
+		return "White has won"
 	case 2:
-		return "Noir a Gagné"
+		return "Black has won"
 	case 3:
-		return "partie null"
+		return "Null game"
 	}
-	return "partie en cours"
+	return "Active game"
 }

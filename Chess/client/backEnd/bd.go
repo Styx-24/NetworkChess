@@ -1,4 +1,4 @@
-package client
+package backEnd
 
 import (
 	"TP/structs"

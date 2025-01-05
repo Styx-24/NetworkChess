@@ -1,6 +1,7 @@
-package server
+package TLV
 
 import (
+	"TP/server/backEnd"
 	"TP/structs"
 	"TP/utils"
 
@@ -17,7 +18,7 @@ func MatchMakingRequest(value []byte) []byte {
 		println(err)
 	}
 
-	playerKey := players[matchMakingRequest.ID].PublicKey
+	playerKey := Players[matchMakingRequest.ID].PublicKey
 	if utils.VerifySignature(&playerKey, message, matchMakingRequest.Signature) {
 		var matchMakingResponse structs.MatchMakingResponse
 
@@ -26,25 +27,25 @@ func MatchMakingRequest(value []byte) []byte {
 
 		if matchMakingRequest.IsAPausedGame {
 
-			games := GetGames(matchMakingRequest.ID)
-			for _, game := range games {
+			Games := backEnd.GetGames(matchMakingRequest.ID)
+			for _, game := range Games {
 				matchMakingResponse.IDs = append(matchMakingResponse.IDs, game.Id)
-				if players[game.Player2].Name == "" {
-					matchMakingResponse.Names = append(matchMakingResponse.Names, players[game.Player1].Name+" "+players[game.Player1].LastName+" vs IA")
+				if Players[game.Player2].Name == "" {
+					matchMakingResponse.Names = append(matchMakingResponse.Names, Players[game.Player1].Name+" "+Players[game.Player1].LastName+" vs IA")
 				} else {
-					matchMakingResponse.Names = append(matchMakingResponse.Names, players[game.Player1].Name+" "+players[game.Player1].LastName+" vs "+players[game.Player2].Name+" "+players[game.Player2].LastName)
+					matchMakingResponse.Names = append(matchMakingResponse.Names, Players[game.Player1].Name+" "+Players[game.Player1].LastName+" vs "+Players[game.Player2].Name+" "+Players[game.Player2].LastName)
 				}
 			}
 
 		} else {
 
-			for _, value := range gameMatchMaking {
+			for _, value := range GameMatchMaking {
 				matchMakingResponse.IDs = append(matchMakingResponse.IDs, value.Player1)
-				matchMakingResponse.Names = append(matchMakingResponse.Names, players[value.Player1].Name+" "+players[value.Player1].LastName)
+				matchMakingResponse.Names = append(matchMakingResponse.Names, Players[value.Player1].Name+" "+Players[value.Player1].LastName)
 			}
 		}
 
-		response, err = matchMakingResponse.Encode(privateKey)
+		response, err = matchMakingResponse.Encode(PrivateKey)
 		if err != nil {
 			println(err)
 		}

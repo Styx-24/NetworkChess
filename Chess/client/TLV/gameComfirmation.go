@@ -1,6 +1,7 @@
-package client
+package TLV
 
 import (
+	"TP/client/backEnd"
 	"TP/structs"
 	"TP/utils"
 )
@@ -14,22 +15,22 @@ func GameComfirmationRequest(value []byte) []byte {
 	if err != nil {
 		println(err)
 	} else {
-		if utils.VerifySignature(&serverPublicKey, message, request.Signature) {
+		if utils.VerifySignature(&ServerPublicKey, message, request.Signature) {
 			println(request.Message)
-			option := ComfirmationPromt()
+			option := backEnd.ComfirmationPromt()
 
 			var response structs.GameComfirmationResponse
 			response.Answer = option == 1
-			response.GameId = gameId
-			response.PlayerId = player.Id
+			response.GameId = GameId
+			response.PlayerId = Player.Id
 
-			buffer, err = response.Encode(player.PrivateKey)
+			buffer, err = response.Encode(Player.PrivateKey)
 			if err != nil {
 				println(err)
 			}
 
 		} else {
-			println("signature invalide")
+			println("Invalid Signature")
 		}
 	}
 
@@ -45,12 +46,12 @@ func GameComfirmationResponse(value []byte) []byte {
 	if err != nil {
 		println(err)
 	} else {
-		if utils.VerifySignature(&serverPublicKey, message, response.Signature) {
+		if utils.VerifySignature(&ServerPublicKey, message, response.Signature) {
 			if response.Answer {
-				println("L'adversaire a accepter le match")
+				println("The opponent accepted the match")
 			} else {
-				println("L'adversaire a refuser le match")
-				buffer, IsAPausedGame = GameSelection(player)
+				println("The opponent refused the match")
+				buffer, IsAPausedGame, IsPlayingSolo = backEnd.GameSelection(Player)
 			}
 
 		}

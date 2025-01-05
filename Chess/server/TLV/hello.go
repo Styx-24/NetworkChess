@@ -1,4 +1,4 @@
-package server
+package TLV
 
 import (
 	"TP/structs"
@@ -15,9 +15,9 @@ func HelloRequest(value []byte) []byte {
 	if err != nil {
 		println(err.Error())
 	} else {
-		players[player.Id] = player
-		fmt.Println("player : " + player.Name + " " + player.LastName + " ajoutée avec id " + player.Id.String())
-		response, _ = HelloResponse.Encode(privateKey.PublicKey)
+		Players[player.Id] = player
+		fmt.Println("player : " + player.Name + " " + player.LastName + " added with ID " + player.Id.String())
+		response, _ = HelloResponse.Encode(PrivateKey.PublicKey)
 	}
 
 	return response

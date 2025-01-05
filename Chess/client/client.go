@@ -1,25 +1,17 @@
 package client
 
 import (
+	"TP/client/TLV"
+	"TP/client/backEnd"
 	"TP/protocols"
 	"TP/structs"
-
 	"bufio"
-	"crypto/rsa"
 	"encoding/binary"
 	"fmt"
 	"net"
 
 	"github.com/google/uuid"
 )
-
-var player structs.User
-var serverPublicKey rsa.PublicKey
-var encryptionKey []byte
-var gameId uuid.UUID
-var team int
-var IsAPausedGame = false
-var isPlayingSolo = false
 
 func Client() {
 
@@ -30,19 +22,19 @@ func Client() {
 		return
 	}
 
-	player.Id = uuid.New()
-	player.Name = "Michel"
-	player.LastName = "Jacob"
+	TLV.Player.Id = uuid.New()
+	TLV.Player.Name = "Michel"
+	TLV.Player.LastName = "Jacob"
 
-	err = DbCreation()
+	err = backEnd.DbCreation()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	player = PlayerMenu()
+	TLV.Player = backEnd.PlayerMenu()
 
-	buffer, err := structs.HelloRequest.Encode(structs.HelloRequest{}, player)
+	buffer, err := structs.HelloRequest.Encode(structs.HelloRequest{}, TLV.Player)
 	if err != nil {
 		print(err)
 	}
@@ -74,40 +66,40 @@ func Client() {
 			switch t {
 			case protocols.HelloResponse:
 				{
-					buffer, serverPublicKey = HelloResponse(value)
+					buffer, TLV.ServerPublicKey = TLV.HelloResponse(value)
 				}
 			case protocols.GameResponse:
 				{
-					buffer = GameResponse(value)
+					buffer = TLV.GameResponse(value)
 				}
 
 			case protocols.ActionResponse:
 				{
-					buffer = ActionResponse(value)
+					buffer = TLV.ActionResponse(value)
 				}
 			case protocols.MatchMakingResponse:
 				{
-					buffer = MatchMakingResponse(value)
+					buffer = TLV.MatchMakingResponse(value)
 				}
 			case protocols.InfoResponse:
 				{
-					buffer = InfoResponse(value)
+					buffer = TLV.InfoResponse(value)
 				}
 			case protocols.GameComfirmationRequest:
 				{
-					buffer = GameComfirmationRequest(value)
+					buffer = TLV.GameComfirmationRequest(value)
 				}
 			case protocols.GameComfirmationResponse:
 				{
-					buffer = GameComfirmationResponse(value)
+					buffer = TLV.GameComfirmationResponse(value)
 				}
 			case protocols.DrawRequest:
 				{
-					buffer = DrawRequest(value)
+					buffer = TLV.DrawRequest(value)
 				}
 			case protocols.PauseRequest:
 				{
-					buffer = PauseRequest(value)
+					buffer = TLV.PauseRequest(value)
 				}
 			}
 

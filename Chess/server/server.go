@@ -2,6 +2,8 @@ package server
 
 import (
 	"TP/protocols"
+	"TP/server/TLV"
+	"TP/server/backEnd"
 	"TP/structs"
 	"bufio"
 	"crypto/rand"
@@ -13,26 +15,32 @@ import (
 	"github.com/google/uuid"
 )
 
-var players = make(map[uuid.UUID]structs.User)
-var games = make(map[uuid.UUID]structs.Game)
-var gameMatchMaking = make(map[uuid.UUID]structs.Game)
-var privateKey rsa.PrivateKey
+var stockfishPath = ""
 
 func Server() {
+
+	var port = ""
+	TLV.Games = make(map[uuid.UUID]structs.Game, 0)
+	TLV.Players = make(map[uuid.UUID]structs.User, 0)
+	TLV.GameMatchMaking = make(map[uuid.UUID]structs.Game, 0)
 
 	genKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		println(err)
 	}
-	privateKey = *genKey
+	TLV.PrivateKey = *genKey
 
-	err = DbCreation()
+	err = backEnd.DbCreation()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	PORT := ":8080"
+	port, stockfishPath = GetConfig()
+
+	backEnd.StockfishPath = stockfishPath
+
+	PORT := port
 	l, err := net.Listen("tcp", PORT)
 	if err != nil {
 		fmt.Println(err)
@@ -56,7 +64,7 @@ func Server() {
 
 func HandleConnection(c net.Conn) {
 
-	println("nouvelle connexion")
+	println("new connexion")
 
 	for {
 		buffer := make([]byte, 2048)
@@ -81,43 +89,43 @@ func HandleConnection(c net.Conn) {
 			switch t {
 			case protocols.HelloRequest:
 				{
-					response = HelloRequest(value)
+					response = TLV.HelloRequest(value)
 				}
 			case protocols.GameRequest:
 				{
-					response = GameRequest(value, c)
+					response = TLV.GameRequest(value, c)
 				}
 			case protocols.GameComfirmationResponse:
 				{
-					response = GameComfirmationResponse(value)
+					response = TLV.GameComfirmationResponse(value)
 				}
 			case protocols.DrawRequest:
 				{
-					response = DrawRequest(value)
+					response = TLV.DrawRequest(value)
 				}
 			case protocols.DrawResponse:
 				{
-					response = DrawResponse(value)
+					response = TLV.DrawResponse(value)
 				}
 			case protocols.PauseRequest:
 				{
-					response = PauseRequest(value)
+					response = TLV.PauseRequest(value)
 				}
 			case protocols.PauseResponse:
 				{
-					response = PauseResponse(value)
+					response = TLV.PauseResponse(value)
 				}
 			case protocols.ActionRequest:
 				{
-					response = ActionRequest(value)
+					response = TLV.ActionRequest(value)
 				}
 			case protocols.MatchMakingRequest:
 				{
-					response = MatchMakingRequest(value)
+					response = TLV.MatchMakingRequest(value)
 				}
 			case protocols.InfoRequest:
 				{
-					response = InfoRequest(value)
+					response = TLV.InfoRequest(value)
 
 				}
 			}

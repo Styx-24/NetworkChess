@@ -1,6 +1,7 @@
-package client
+package TLV
 
 import (
+	"TP/client/backEnd"
 	"TP/structs"
 	"TP/utils"
 
@@ -17,11 +18,11 @@ func MatchMakingResponse(value []byte) []byte {
 	if err != nil {
 		print(err)
 	} else {
-		if utils.VerifySignature(&serverPublicKey, message, matchMakingResponse.Signature) {
-			id := OpponentSelection(matchMakingResponse)
+		if utils.VerifySignature(&ServerPublicKey, message, matchMakingResponse.Signature) {
+			id := backEnd.OpponentSelection(matchMakingResponse)
 
 			if id == 0 {
-				buffer, IsAPausedGame = GameSelection(player)
+				buffer, IsAPausedGame, IsPlayingSolo = backEnd.GameSelection(Player)
 			} else {
 
 				var GameRequest structs.GameRequest
@@ -33,9 +34,9 @@ func MatchMakingResponse(value []byte) []byte {
 					GameRequest.GameId = uuid.Nil
 				}
 
-				GameRequest.OponentId = player.Id
+				GameRequest.OponentId = Player.Id
 
-				buffer, err = GameRequest.Encode(player.PrivateKey)
+				buffer, err = GameRequest.Encode(Player.PrivateKey)
 				if err != nil {
 					println(err)
 				}

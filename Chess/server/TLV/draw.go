@@ -1,4 +1,4 @@
-package server
+package TLV
 
 import (
 	"TP/structs"
@@ -15,21 +15,21 @@ func DrawRequest(value []byte) []byte {
 	if err != nil {
 		println(err)
 	} else {
-		playerKey := players[request.PlayerId].PublicKey
+		playerKey := Players[request.PlayerId].PublicKey
 		if utils.VerifySignature(&playerKey, message, request.Signature) {
 
-			requestBuffer, err := request.Encode(privateKey)
+			requestBuffer, err := request.Encode(PrivateKey)
 			if err != nil {
 				println(err)
 			}
 
-			if games[request.GameId].Player1 == request.PlayerId {
-				if games[request.GameId].Player2Connexion != nil {
-					games[request.GameId].Player2Connexion.Write(requestBuffer)
+			if Games[request.GameId].Player1 == request.PlayerId {
+				if Games[request.GameId].Player2Connexion != nil {
+					Games[request.GameId].Player2Connexion.Write(requestBuffer)
 				}
 			} else {
-				if games[request.GameId].Player1Connexion != nil {
-					games[request.GameId].Player1Connexion.Write(requestBuffer)
+				if Games[request.GameId].Player1Connexion != nil {
+					Games[request.GameId].Player1Connexion.Write(requestBuffer)
 				}
 			}
 		}
@@ -49,28 +49,28 @@ func DrawResponse(value []byte) []byte {
 	if err != nil {
 		println(err)
 	} else {
-		playerKey := players[queryResponse.PlayerId].PublicKey
+		playerKey := Players[queryResponse.PlayerId].PublicKey
 		if utils.VerifySignature(&playerKey, message, queryResponse.Signature) {
 
 			if queryResponse.Answer {
-				games[queryResponse.GameId].Game.Draw(chess.DrawOffer)
+				Games[queryResponse.GameId].Game.Draw(chess.DrawOffer)
 
 				var actionResponse structs.ActionResponse
 
 				actionResponse.GameHasEnded = true
-				actionResponse.Message = "Partie null"
+				actionResponse.Message = "Null game"
 				actionResponse.MoveWasValid = false
 				actionResponse.TurnOf = 0
 
-				response, err = actionResponse.Encode(privateKey, games[queryResponse.GameId].EncryptionKey)
+				response, err = actionResponse.Encode(PrivateKey, Games[queryResponse.GameId].EncryptionKey)
 				if err != nil {
 					println(err)
 				}
 
-				if games[queryResponse.GameId].Player1 == queryResponse.PlayerId {
-					games[queryResponse.GameId].Player2Connexion.Write(response)
+				if Games[queryResponse.GameId].Player1 == queryResponse.PlayerId {
+					Games[queryResponse.GameId].Player2Connexion.Write(response)
 				} else {
-					games[queryResponse.GameId].Player1Connexion.Write(response)
+					Games[queryResponse.GameId].Player1Connexion.Write(response)
 				}
 
 			} else {

@@ -1,6 +1,7 @@
-package server
+package TLV
 
 import (
+	"TP/server/backEnd"
 	"TP/structs"
 	"TP/utils"
 	"crypto/rand"
@@ -20,8 +21,8 @@ func GameRequest(value []byte, c net.Conn) []byte {
 		println(err)
 	} else {
 
-		playerKey := players[GameRequest.PlayerId].PublicKey
-		opponentKey := players[GameRequest.OponentId].PublicKey
+		playerKey := Players[GameRequest.PlayerId].PublicKey
+		opponentKey := Players[GameRequest.OponentId].PublicKey
 
 		if utils.VerifySignature(&playerKey, message, GameRequest.Signature) || utils.VerifySignature(&opponentKey, message, GameRequest.Signature) {
 
@@ -34,7 +35,7 @@ func GameRequest(value []byte, c net.Conn) []byte {
 			}
 
 		} else {
-			println("Signature invalide")
+			println("Invalid signature")
 		}
 
 	}
@@ -48,10 +49,10 @@ func PausedGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn
 	var gameResponse structs.GameResponse
 	gameResponse.GameId = uuid.New()
 
-	if games[GameRequest.GameId].Player1 == uuid.Nil {
+	if Games[GameRequest.GameId].Player1 == uuid.Nil {
 
-		game := GetGame(GameRequest.GameId)
-		game.Game = LoadGame(game.FEN)
+		game := backEnd.GetGame(GameRequest.GameId)
+		game.Game = backEnd.LoadGame(game.FEN)
 
 		var key = make([]byte, 16)
 
@@ -70,14 +71,14 @@ func PausedGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn
 			gameResponse.TurnOf = game.Turn
 			gameResponse.Status = game.Game.Position().Board().Draw()
 
-			DeleteGame(games[GameRequest.GameId].Id)
+			backEnd.DeleteGame(Games[GameRequest.GameId].Id)
 
 		} else {
 
 			gameResponse.EncryptionKey = key
 			gameResponse.Team = 0
 			gameResponse.TurnOf = 3
-			gameResponse.Status = "Attente d'un adversère"
+			gameResponse.Status = "Waiting for opponent"
 
 		}
 
@@ -87,13 +88,13 @@ func PausedGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn
 			game.Player2Connexion = c
 		}
 
-		games[GameRequest.GameId] = game
+		Games[GameRequest.GameId] = game
 
 	} else {
 
-		DeleteGame(games[GameRequest.GameId].Id)
+		backEnd.DeleteGame(Games[GameRequest.GameId].Id)
 
-		game := games[GameRequest.GameId]
+		game := Games[GameRequest.GameId]
 
 		gameResponse.GameId = GameRequest.GameId
 		gameResponse.EncryptionKey = game.EncryptionKey
@@ -106,34 +107,34 @@ func PausedGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn
 			game.Player2Connexion = c
 		}
 
-		games[GameRequest.GameId] = game
+		Games[GameRequest.GameId] = game
 
-		if GameRequest.PlayerId == games[gameResponse.GameId].Player1 {
+		if GameRequest.PlayerId == Games[gameResponse.GameId].Player1 {
 			gameResponse.Team = 2
-			response, err = gameResponse.Encode(privateKey)
+			response, err = gameResponse.Encode(PrivateKey)
 			if err != nil {
 				println(err)
 			}
 
-			games[gameResponse.GameId].Player2Connexion.Write(response)
+			Games[gameResponse.GameId].Player2Connexion.Write(response)
 
 			gameResponse.Team = 1
 
 		} else {
 			gameResponse.Team = 1
-			response, err = gameResponse.Encode(privateKey)
+			response, err = gameResponse.Encode(PrivateKey)
 			if err != nil {
 				println(err)
 			}
 
-			games[gameResponse.GameId].Player1Connexion.Write(response)
+			Games[gameResponse.GameId].Player1Connexion.Write(response)
 
 			gameResponse.Team = 2
 		}
 
 	}
 
-	response, err = gameResponse.Encode(privateKey)
+	response, err = gameResponse.Encode(PrivateKey)
 	if err != nil {
 		println(err)
 	}
@@ -155,12 +156,12 @@ func SoloGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn) 
 	gameResponse.EncryptionKey = key
 	gameResponse.TurnOf = 1
 
-	games[gameResponse.GameId] = structs.Game{Player1: players[GameRequest.PlayerId].Id, Player1Connexion: c, Player2: uuid.Nil, Id: gameResponse.GameId, EncryptionKey: key, Turn: 1, Game: GenerateGame()}
+	Games[gameResponse.GameId] = structs.Game{Player1: Players[GameRequest.PlayerId].Id, Player1Connexion: c, Player2: uuid.Nil, Id: gameResponse.GameId, EncryptionKey: key, Turn: 1, Game: backEnd.GenerateGame()}
 
-	gameResponse.Status = games[gameResponse.GameId].Game.Position().Board().Draw()
+	gameResponse.Status = Games[gameResponse.GameId].Game.Position().Board().Draw()
 	gameResponse.Team = 1
 
-	response, err = gameResponse.Encode(privateKey)
+	response, err = gameResponse.Encode(PrivateKey)
 	if err != nil {
 		println(err)
 	}
@@ -185,31 +186,31 @@ func PVPGameRequest(value []byte, GameRequest structs.GameRequest, c net.Conn) [
 		}
 		gameResponse.EncryptionKey = key
 		gameResponse.Team = 0
-		gameResponse.Status = "Attente d'un adversère"
+		gameResponse.Status = "Waiting for opponent"
 		gameResponse.TurnOf = 2
-		gameMatchMaking[GameRequest.PlayerId] = structs.Game{Player1: players[GameRequest.PlayerId].Id, Player1Connexion: c, Id: gameResponse.GameId, EncryptionKey: key}
+		GameMatchMaking[GameRequest.PlayerId] = structs.Game{Player1: Players[GameRequest.PlayerId].Id, Player1Connexion: c, Id: gameResponse.GameId, EncryptionKey: key}
 
 	} else {
 
-		games[gameMatchMaking[GameRequest.PlayerId].Id] = structs.Game{Player1: players[GameRequest.PlayerId].Id, Player1Connexion: gameMatchMaking[GameRequest.PlayerId].Player1Connexion, Player2: GameRequest.OponentId, Player2Connexion: c, Id: gameMatchMaking[GameRequest.PlayerId].Id, EncryptionKey: gameMatchMaking[GameRequest.PlayerId].EncryptionKey, Turn: 1, Game: GenerateGame()}
-		gameResponse.GameId = gameMatchMaking[GameRequest.PlayerId].Id
-		gameResponse.Status = "Attente de comfirmation avec l'adverère"
-		gameResponse.EncryptionKey = gameMatchMaking[GameRequest.PlayerId].EncryptionKey
+		Games[GameMatchMaking[GameRequest.PlayerId].Id] = structs.Game{Player1: Players[GameRequest.PlayerId].Id, Player1Connexion: GameMatchMaking[GameRequest.PlayerId].Player1Connexion, Player2: GameRequest.OponentId, Player2Connexion: c, Id: GameMatchMaking[GameRequest.PlayerId].Id, EncryptionKey: GameMatchMaking[GameRequest.PlayerId].EncryptionKey, Turn: 1, Game: backEnd.GenerateGame()}
+		gameResponse.GameId = GameMatchMaking[GameRequest.PlayerId].Id
+		gameResponse.Status = "Waiting for comfirmation"
+		gameResponse.EncryptionKey = GameMatchMaking[GameRequest.PlayerId].EncryptionKey
 		gameResponse.Team = 2
 		gameResponse.TurnOf = 1
 
 		var comfirmation structs.GameComfirmationRequest
-		comfirmation.Message = "Joueur " + players[GameRequest.PlayerId].Name + " " + players[GameRequest.PlayerId].LastName + " veux jouer contre vous, voulez-vous commencer le match?"
-		comfirmationBuffer, err := comfirmation.Encode(privateKey)
+		comfirmation.Message = "Player " + Players[GameRequest.PlayerId].Name + " " + Players[GameRequest.PlayerId].LastName + " wants to play against you, do you accept?"
+		comfirmationBuffer, err := comfirmation.Encode(PrivateKey)
 		if err != nil {
 			println(err)
 		}
 
-		games[gameResponse.GameId].Player1Connexion.Write(comfirmationBuffer)
+		Games[gameResponse.GameId].Player1Connexion.Write(comfirmationBuffer)
 
 	}
 
-	response, err = gameResponse.Encode(privateKey)
+	response, err = gameResponse.Encode(PrivateKey)
 	if err != nil {
 		println(err)
 	}

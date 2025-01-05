@@ -1,6 +1,7 @@
-package server
+package TLV
 
 import (
+	"TP/server/backEnd"
 	"TP/structs"
 	"TP/utils"
 
@@ -17,24 +18,24 @@ func PauseRequest(value []byte) []byte {
 		println(err)
 	} else {
 
-		playerKey := players[request.PlayerId].PublicKey
+		playerKey := Players[request.PlayerId].PublicKey
 		if utils.VerifySignature(&playerKey, message, request.Signature) {
 
-			requestBuffer, err := request.Encode(privateKey)
+			requestBuffer, err := request.Encode(PrivateKey)
 			if err != nil {
 				println(err)
 			}
 
-			if games[request.GameId].Player1 == request.PlayerId {
-				if games[request.GameId].Player2Connexion != nil {
-					games[request.GameId].Player2Connexion.Write(requestBuffer)
+			if Games[request.GameId].Player1 == request.PlayerId {
+				if Games[request.GameId].Player2Connexion != nil {
+					Games[request.GameId].Player2Connexion.Write(requestBuffer)
 				} else {
 					response = pauseGame(request.GameId, request.PlayerId)
 				}
 
 			} else {
-				if games[request.GameId].Player1Connexion != nil {
-					games[request.GameId].Player1Connexion.Write(requestBuffer)
+				if Games[request.GameId].Player1Connexion != nil {
+					Games[request.GameId].Player1Connexion.Write(requestBuffer)
 				}
 			}
 		}
@@ -53,7 +54,7 @@ func PauseResponse(value []byte) []byte {
 	if err != nil {
 		println(err)
 	} else {
-		playerKey := players[queryResponse.PlayerId].PublicKey
+		playerKey := Players[queryResponse.PlayerId].PublicKey
 		if utils.VerifySignature(&playerKey, message, queryResponse.Signature) {
 
 			if queryResponse.Answer {
@@ -75,28 +76,28 @@ func pauseGame(gameId uuid.UUID, playerId uuid.UUID) []byte {
 	var actionResponse structs.ActionResponse
 
 	actionResponse.GameHasEnded = true
-	actionResponse.Message = "Partie en pause"
+	actionResponse.Message = "Game paused"
 	actionResponse.MoveWasValid = false
 	actionResponse.TurnOf = 0
 
-	response, err = actionResponse.Encode(privateKey, games[gameId].EncryptionKey)
+	response, err = actionResponse.Encode(PrivateKey, Games[gameId].EncryptionKey)
 	if err != nil {
 		println(err)
 	}
 
-	if games[gameId].Player1 == playerId {
-		if games[gameId].Player2Connexion != nil {
-			games[gameId].Player2Connexion.Write(response)
+	if Games[gameId].Player1 == playerId {
+		if Games[gameId].Player2Connexion != nil {
+			Games[gameId].Player2Connexion.Write(response)
 		}
 	} else {
-		if games[gameId].Player1Connexion != nil {
-			games[gameId].Player1Connexion.Write(response)
+		if Games[gameId].Player1Connexion != nil {
+			Games[gameId].Player1Connexion.Write(response)
 		}
 	}
 
-	InsertNewGame(games[gameId])
+	backEnd.InsertNewGame(Games[gameId])
 
-	delete(games, gameId)
+	delete(Games, gameId)
 
 	return response
 }

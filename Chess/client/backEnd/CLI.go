@@ -1,4 +1,4 @@
-package client
+package backEnd
 
 import (
 	"TP/structs"
@@ -24,7 +24,7 @@ func PlayerMenu() structs.User {
 	for !valid {
 
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print(" 1. Choisire un joueur \n 2. Ajouter un nouveaux joueur \n >> ")
+		fmt.Print(" 1. Choose a player \n 2. Create a new player \n >> ")
 
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSpace(text)
@@ -32,7 +32,7 @@ func PlayerMenu() structs.User {
 
 		option, err = strconv.Atoi(text)
 		if err != nil || option < 1 || option > 2 {
-			fmt.Println("Veuiller entrer un nombre vailde")
+			fmt.Println("Please enter a valid number")
 		} else {
 			valid = true
 		}
@@ -56,13 +56,13 @@ func CreatePlayer() structs.User {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Entrez votre prénom >> ")
+	fmt.Print("Enter your name >> ")
 	text, _ := reader.ReadString('\n')
 	text = strings.TrimSpace(text)
 	text = strings.ReplaceAll(text, "\n", "")
 	player.Name = text
 
-	fmt.Print("Entrez votre nom >> ")
+	fmt.Print("Enter your last name >> ")
 	text, _ = reader.ReadString('\n')
 	text = strings.TrimSpace(text)
 	text = strings.ReplaceAll(text, "\n", "")
@@ -92,7 +92,7 @@ func LoadPlayer() structs.User {
 
 	for !valid {
 		reader := bufio.NewReader(os.Stdin)
-		print("Choisisez un untilisateur\n0: quiter \n")
+		print("Choose a player \n 0: quit \n")
 		for i := 0; i < len(list); i++ {
 			println(strconv.Itoa(i+1) + ": " + list[i].Name + " " + list[i].LastName)
 		}
@@ -105,7 +105,7 @@ func LoadPlayer() structs.User {
 		response, err := strconv.Atoi(text)
 
 		if err != nil || response < 0 || response > len(list) {
-			fmt.Println("Veuiller entrer un nombre vailde")
+			fmt.Println("Please enter a valid number")
 		} else {
 			valid = true
 
@@ -129,17 +129,18 @@ func LoadPlayer() structs.User {
 	return player
 }
 
-func GameSelection(player structs.User) ([]byte, bool) {
+func GameSelection(player structs.User) ([]byte, bool, bool) {
 
 	option := 0
 	valid := false
 	buffer := make([]byte, 0)
 	var err error
 	var IsAPausedGame = false
+	var IsPlayingSolo = false
 
 	for !valid {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print(" 1. Commencer une partie en tant que hôte \n 2. Rechercher une partie \n 3. Parite contre un IA \n 4. Obtenire les parties entérieures \n >> ")
+		fmt.Print(" 1. Start game as host \n 2. Look for a game \n 3. Game against AI \n 4. Get paused games \n >> ")
 
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSpace(text)
@@ -148,7 +149,7 @@ func GameSelection(player structs.User) ([]byte, bool) {
 		response, err := strconv.Atoi(text)
 
 		if err != nil || response < 1 || response > 4 {
-			fmt.Println("Veuiller entrer un nombre vailde")
+			fmt.Println("Please enter a valid number")
 		} else {
 			valid = true
 
@@ -187,7 +188,7 @@ func GameSelection(player structs.User) ([]byte, bool) {
 			GameRequest.PlayerId = player.Id
 			GameRequest.OponentId = uuid.Nil
 			GameRequest.GameId = uuid.Nil
-			isPlayingSolo = true
+			IsPlayingSolo = true
 			buffer, err = GameRequest.Encode(player.PrivateKey)
 			if err != nil {
 				println(err)
@@ -207,7 +208,7 @@ func GameSelection(player structs.User) ([]byte, bool) {
 		}
 	}
 
-	return buffer, IsAPausedGame
+	return buffer, IsAPausedGame, IsPlayingSolo
 }
 
 func OpponentSelection(matchMakingResponse structs.MatchMakingResponse) int {
@@ -217,7 +218,7 @@ func OpponentSelection(matchMakingResponse structs.MatchMakingResponse) int {
 	for !valid {
 		reader := bufio.NewReader(os.Stdin)
 
-		print("Choisisez un untilisateur\n0: quiter \n")
+		print("Choose a player \n 0: quit \n")
 		for i := 0; i < len(matchMakingResponse.Names); i++ {
 			println(strconv.Itoa(i+1) + ": " + matchMakingResponse.Names[i])
 		}
@@ -230,7 +231,7 @@ func OpponentSelection(matchMakingResponse structs.MatchMakingResponse) int {
 		response, err := strconv.Atoi(text)
 
 		if err != nil || response < 0 || response > len(matchMakingResponse.Names) {
-			fmt.Println("Veuiller entrer un nombre vailde")
+			fmt.Println("Please enter a valid number")
 		} else {
 			valid = true
 			option = response
@@ -240,7 +241,7 @@ func OpponentSelection(matchMakingResponse structs.MatchMakingResponse) int {
 	return option
 }
 
-func SelectMove() []byte {
+func SelectMove(player structs.User, gameId uuid.UUID, encryptionKey []byte, isPlayingSolo bool) []byte {
 	var buffer []byte
 	var err error
 
@@ -250,7 +251,7 @@ func SelectMove() []byte {
 	isValid := false
 
 	for !isValid {
-		fmt.Print("1: Liste des coups valide \n2: Le meilleur coup \n3: Demander une partie null \n4: Mettre la partie en pause \n\nEffectuez votre coup >> ")
+		fmt.Print("1: List of valid moves \n2: Best move \n3: Ask for a null game \n4: Pause game \n\nMake your move >> ")
 		text, _ = reader.ReadString('\n')
 		text = strings.ReplaceAll(text, "\n", "")
 		text = strings.ReplaceAll(text, "\r", "")
@@ -260,7 +261,7 @@ func SelectMove() []byte {
 			if option > 0 && option < 5 {
 				isValid = true
 			} else {
-				println("Entrez un nombre valide")
+				println("Please enter a valid number")
 			}
 
 		} else {
@@ -288,14 +289,14 @@ func SelectMove() []byte {
 				var request structs.DrawRequest
 				request.GameId = gameId
 				request.PlayerId = player.Id
-				request.Message = "L'adversère demande une partie null, acceptez-vous?"
+				request.Message = "The opponent wants to null the game, do you accept?"
 				buffer, err = request.Encode(player.PrivateKey)
 				if err != nil {
 					println(err.Error())
 				}
 			} else {
-				println("Option non disponible en match contre l'IA")
-				return SelectMove()
+				println("Option not available in a game against the AI")
+				return SelectMove(player, gameId, encryptionKey, isPlayingSolo)
 			}
 
 		}
@@ -305,7 +306,7 @@ func SelectMove() []byte {
 			var request structs.PauseRequest
 			request.GameId = gameId
 			request.PlayerId = player.Id
-			request.Message = "L'adversère demande de mettre la partie en pause, aceptez-vous?"
+			request.Message = "The opponent wants to pause the game, do you accept?"
 			buffer, err = request.Encode(player.PrivateKey)
 			if err != nil {
 				println(err.Error())
@@ -337,7 +338,7 @@ func ComfirmationPromt() int {
 
 	for !valid {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print(" 1. Accepter \n 2. Refuser \n >> ")
+		fmt.Print(" 1. Accept \n 2. Refuse \n >> ")
 
 		text, _ := reader.ReadString('\n')
 		text = strings.TrimSpace(text)
@@ -346,7 +347,7 @@ func ComfirmationPromt() int {
 		response, err := strconv.Atoi(text)
 
 		if err != nil || response < 1 || response > 2 {
-			fmt.Println("Veuiller entrer un nombre vailde")
+			fmt.Println("Please enter a valid number")
 		} else {
 			valid = true
 

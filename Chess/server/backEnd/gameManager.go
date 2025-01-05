@@ -1,4 +1,4 @@
-package server
+package backEnd
 
 import (
 	"time"
@@ -6,6 +6,8 @@ import (
 	"github.com/notnil/chess"
 	"github.com/notnil/chess/uci"
 )
+
+var StockfishPath string
 
 func GenerateGame() *chess.Game {
 	return chess.NewGame()
@@ -25,7 +27,7 @@ func Move(game *chess.Game, movestr string) error {
 }
 
 func AIMove(game *chess.Game) {
-	eng, err := uci.New("C:\\Users\\atori\\Downloads\\stockfish\\stockfish.exe")
+	eng, err := uci.New(StockfishPath)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +83,7 @@ func GetValidMoves(game *chess.Game) string {
 
 func GetBestMove(game *chess.Game) (string, error) {
 
-	eng, err := uci.New("C:\\Users\\atori\\Downloads\\stockfish\\stockfish.exe")
+	eng, err := uci.New(StockfishPath)
 	if err != nil {
 		return "", err
 	}
