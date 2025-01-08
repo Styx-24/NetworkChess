@@ -4,7 +4,7 @@ This is a online chess game written in Go using the TCP protocol. It uses the [n
 
 ## How to install
 
-Download [the latest release]() and extract it.
+Download [the latest release](https://github.com/Styx-24/NetworkChess/releases/tag/1.0) and extract it.
 
 ## How to use
 
