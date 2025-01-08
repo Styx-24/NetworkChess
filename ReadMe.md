@@ -13,14 +13,14 @@ Before starting the program make sure to set the correct path for stockfish in t
 To start the program open a terminal at the root of the project and then type the command
 
 ```
-go run main.go -s
+go run main.go s
 ```
 
 
 or 
 
 ```
-go run main.go -c
+go run main.go c
 ```
 to start the program in server or client mode.
 
