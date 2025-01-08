@@ -1,2 +1,2 @@
 :8080
-C:\\Users\\atori\\Downloads\\stockfish\\stockfish.exe
+-StockFish Path Here-

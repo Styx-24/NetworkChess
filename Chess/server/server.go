@@ -20,17 +20,21 @@ var stockfishPath = ""
 func Server() {
 
 	var port = ""
+
 	TLV.Games = make(map[uuid.UUID]structs.Game, 0)
 	TLV.Players = make(map[uuid.UUID]structs.User, 0)
 	TLV.GameMatchMaking = make(map[uuid.UUID]structs.Game, 0)
 
 	genKey, err := rsa.GenerateKey(rand.Reader, 2048)
+
 	if err != nil {
 		println(err)
 	}
+
 	TLV.PrivateKey = *genKey
 
 	err = backEnd.DbCreation()
+
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -38,7 +42,12 @@ func Server() {
 
 	port, stockfishPath = GetConfig()
 
-	backEnd.StockfishPath = stockfishPath
+	if stockfishPath == "-StockFish Path Here-" {
+		println("Please enter a valid stockfish path")
+		return
+	} else {
+		backEnd.StockfishPath = stockfishPath
+	}
 
 	PORT := port
 	l, err := net.Listen("tcp", PORT)
